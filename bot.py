@@ -57,8 +57,22 @@ async def nick_user(ctx, username, nickname):
 	for member in members:
 		if member.id == user_id:
 			member_to_change = member
-	print(f"Changing @{member_to_change}'s nickname to {nickname}")
-	await member_to_change.edit(nick=nickname)
+	old_nickname = member_to_change.nick
+	print(f"Changing @{member_to_change}'s nickname from {old_nickname} to {nickname}")
+	channel_invoked = ctx.message.channel
+	try:
+		await member_to_change.edit(nick=nickname)
+		await channel.send(f"Successfully changed @{member_to_change}'s nickname from {old_nickname} to {nickname}")
+	except commands.errors.TooManyArguments:
+		await channel.send("Too many arguments! Please use the following format: nick!name @user \"New Nickname\"")
+	except discord.errors.HTTPException as err:
+		if err.status == 400 and err.code == 50035:
+			if err.test == "In nick: Must be 32 or fewer in length.":
+				await channel.send("Nickname is too long! Nick must be 32 characters or fewer.")
+			else:
+				raise err
+		else:
+			raise err
 	return
 
 
