@@ -18,6 +18,7 @@ intents = intents.all()
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 GUILD_NAME = os.getenv('DISCORD_GUILD')
+FILTER = eval(os.getenv('FILTER'))
 VERBOSE = eval(os.getenv('VERBOSE'))
 
 
@@ -65,6 +66,11 @@ async def nick_user(ctx, username, nickname):
 		print(f"@{member_to_change} tried to change their own nickname!")
 		await channel_invoked.send(error_text)
 		return
+	for filter_text in FILTER:
+		if filter_text in nickname:
+			print(f"{filter_text} filter is on.")
+			await channel_invoked.send("no.")
+			return
 	try:
 		await member_to_change.edit(nick=nickname)
 		success_text = f"Successfully changed @{member_to_change}'s nickname from \"{old_nickname}\" to \"{nickname}\""
@@ -88,5 +94,40 @@ async def nick_user(ctx, username, nickname):
 		print("[ERROR] 403 Forbidden")
 	return
 
+
+
+@bot.command(name="filter")
+@commands.has_role("admin")
+async def add_filter(ctx, filter_text):
+	guild = ctx.guild
+	channel_invoked = ctx.message.channel
+
+	FILTER.append(filter_text)
+
+	beforeLines = []
+	atFilter = False
+	afterLines = []
+	with open(".env", "r") as f:
+		for line in f:
+			if line.startswith("FILTER=") or line.startswith("export FILTER="):
+				atFilter = True
+				continue
+			else:
+				if not atFilter:
+					beforeLines.append(line)
+				else:
+					afterLines.append(line)
+	with open(".env", "w") as f:
+		newEnv = beforeLines + ["FILTER=" + str(FILTER)] + afterLines
+		f.writeLines(newEnv)
+
+	success_text_0 = f"{filter_text} has been added to nickname filter."
+	success_text_1 = f"Filter list is now {FILTER}"
+	print(success_text_0)
+	print(success_text_1)
+	await channel_invoked.send(success_text_0)
+	await channel_invoked.send(success_text_1)
+
+	return
 
 bot.run(TOKEN)
