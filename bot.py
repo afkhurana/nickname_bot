@@ -80,6 +80,13 @@ async def nick_user(ctx, username, nickname):
 		error_text = "Too many arguments! Please use the following format: nick!name @user \"New Nickname\""
 		print(error_text)
 		await channel_invoked.send(error_text)
+	except commands.errors.MissingRequiredArgument:
+		error_text = "Not enough arguments! Please use the following format: nick!name @user \"New Nickname\""
+		print(error_text)
+		await channel_invoked.send(error_text)		
+	except (discord.errors.Forbidden, commands.errors.CommandInvokeError):
+		print("[ERROR] 403 Forbidden")
+		await channel_invoked.send("Sorry! You can't change server owner's name yet.")
 	except discord.errors.HTTPException as err:
 		if err.status == 400 and err.code == 50035:
 			if "In nick: Must be 32 or fewer in length." in err.text:
@@ -90,8 +97,6 @@ async def nick_user(ctx, username, nickname):
 				raise err
 		else:
 			raise err
-	except (discord.errors.Forbidden, commands.errors.CommandInvokeError):
-		print("[ERROR] 403 Forbidden")
 	return
 
 
